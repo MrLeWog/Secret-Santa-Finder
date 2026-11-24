@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0f2b24">
+<title>Secret Santa – find out who you've got</title>
+<style>
+:root{
+  --spruce:#0f2b24; --spruce-2:#1a4337; --paper:#fffaf0; --ink:#26261f; --muted:#6b6a5c;
+  --berry:#a8202f; --berry-2:#8a1a27; --gold:#d8a43d; --line:#e6dcc4; --ok:#2f7d4f;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--spruce)}
+body{
+  margin:0;min-height:100vh;font:16px/1.5 var(--sans);color:var(--ink);
+  background:
+    radial-gradient(rgba(255,255,255,.07) 1.5px,transparent 1.7px) 0 0/44px 44px,
+    radial-gradient(rgba(255,255,255,.05) 1.5px,transparent 1.7px) 22px 22px/44px 44px,
+    radial-gradient(900px 500px at 50% -160px,#24705a 0,transparent 70%),
+    var(--spruce);
+  background-attachment:fixed;
+}
+.wrap{max-width:640px;margin:0 auto;padding:30px 16px 64px}
+.hero{text-align:center;color:#fdf3da;margin-bottom:8px}
+.flake{color:var(--gold);font-size:26px;line-height:1;letter-spacing:.6em;padding-left:.6em}
+h1{font:700 clamp(2.2rem,9vw,3.1rem)/1.05 var(--serif);margin:6px 0 6px;letter-spacing:-.01em}
+.sub{margin:0;color:#cfe3d9;font-size:1.02rem}
+.card{background:var(--paper);border-radius:18px;padding:22px 20px;margin:16px 0;
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 14px 34px rgba(0,0,0,.28)}
+.card h2{font:700 1.3rem/1.25 var(--serif);margin:0 0 6px;display:flex;gap:10px;align-items:center}
+.step{flex:none;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;
+  background:var(--berry);color:#fff;font:700 14px var(--sans)}
+.hint{color:var(--muted);margin:4px 0 14px;font-size:.95rem}
+.hint.tight{margin-bottom:6px}
+label{display:block;font-weight:600;margin:14px 0 6px}
+input,textarea,select{width:100%;font:inherit;color:var(--ink);padding:12px 14px;border-radius:12px;
+  border:2px solid var(--line);background:#fff}
+textarea{resize:vertical;min-height:96px}
+input:focus-visible,textarea:focus-visible,select:focus-visible,.btn:focus-visible,.chip:focus-visible,summary:focus-visible{
+  outline:3px solid var(--gold);outline-offset:2px}
+.btn{appearance:none;border:0;border-radius:12px;padding:12px 20px;min-height:46px;font:600 1rem var(--sans);
+  background:var(--berry);color:#fff;cursor:pointer;transition:background .15s,transform .05s}
+.btn:hover{background:var(--berry-2)} .btn:active{transform:translateY(1px)}
+.btn:disabled{background:#cdc5ae;color:#f6f1e2;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--berry-2);box-shadow:inset 0 0 0 2px var(--line)}
+.btn.ghost:hover{background:#f6eedb}
+.btn.danger{color:#8a1a27}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{appearance:none;cursor:pointer;border-radius:999px;border:2px solid var(--line);background:#fff;color:var(--ink);
+  padding:9px 18px;min-height:46px;font:500 1rem var(--sans);transition:background .12s,border-color .12s}
+.chip:hover{border-color:var(--spruce-2)}
+.chip[aria-pressed="true"]{background:var(--spruce-2);border-color:var(--spruce-2);color:#fff}
+.pills{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.pill{border-radius:999px;padding:6px 14px;font-weight:500;font-size:.95rem}
+.pill.done{background:#e1f1e6;color:var(--ok)}
+.pill.wait{background:#f3ecd9;color:var(--muted)}
+.msg{margin:10px 0 0;min-height:1.4em;font-size:.95rem;color:var(--ok)}
+.msg.warn{color:var(--berry-2)}
+.notice{background:#fff3cf;border-radius:12px;padding:12px 14px;margin:0 0 14px;font-size:.95rem}
+.lock{background:#f3ecd9;border-radius:14px;padding:16px;color:var(--muted)}
+.lock p{margin:0}
+.problem{background:#fde8e6;border-radius:14px;padding:16px;color:#7a1620}
+.problem p{margin:0 0 6px} .problem p:last-child{margin:0}
+.reveal{background:linear-gradient(160deg,var(--berry),#6f1020);color:#fff;border-radius:16px;
+  padding:30px 18px;text-align:center;animation:pop .55s cubic-bezier(.2,1.2,.4,1)}
+.reveal .lead{margin:0 0 4px;opacity:.85;letter-spacing:.04em}
+.reveal .name{margin:0;font:700 clamp(2rem,10vw,3.2rem)/1.1 var(--serif);overflow-wrap:anywhere}
+@keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{animation:none}.btn,.chip{transition:none}}
+.big{width:100%;min-height:54px;font-size:1.1rem}
+.linkbox{font:.85rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}
+details{margin-top:4px}
+summary{cursor:pointer;font-weight:600;padding:6px 0}
+details p{color:var(--muted);font-size:.95rem;margin:6px 0}
+.foot{text-align:center;color:#9fc0b2;font-size:.85rem;margin-top:26px}
+.foot a{color:#d9ecdf}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+a{color:var(--berry-2)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<noscript><p style="color:#fff;padding:24px;font-family:sans-serif">This page needs JavaScript to work.</p></noscript>
+<script>
+(() => {
+'use strict';
+
+/* ============================================================
+   Secret Santa – no server, no accounts.
+   • Organiser's game lives in this browser's localStorage.
+   • The participant link (#j=…) carries the names + a game key.
+   • Each participant's pick is encrypted (AES-GCM) into a short
+     code (#r=…) that they send back to the organiser.
+   • Once every other person's code is in, the one person nobody
+     else picked is the organiser's own person.
+   ============================================================ */
+
+const app = document.getElementById('app');
+const STORE = 'secretSanta.organiser.v1';
+const enc = new TextEncoder(), dec = new TextDecoder();
+
+/* ---------- helpers ---------- */
+const b64u = {
+  enc(bytes){ let s=''; for (const b of bytes) s += String.fromCharCode(b);
+    return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); },
+  dec(str){ str = str.replace(/-/g,'+').replace(/_/g,'/'); while (str.length % 4) str += '=';
+    const s = atob(str), out = new Uint8Array(s.length);
+    for (let i=0;i<s.length;i++) out[i] = s.charCodeAt(i); return out; }
+};
+const rand = n => crypto.getRandomValues(new Uint8Array(n));
+const baseUrl = () => location.href.split('#')[0];
+const range = n => Array.from({length:n}, (_,i) => i);
+
+// Builds DOM safely (names are user input, so never use innerHTML).
+function h(tag, attrs, ...kids){
+  if (attrs && (typeof attrs === 'string' || attrs.nodeType || Array.isArray(attrs))) { kids.unshift(attrs); attrs = null; }
+  const el = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) el.append(kid);
+  return el;
+}
+
+function page(opts, ...cards){
+  app.replaceChildren(h('div', {class:'wrap'},
+    h('header', {class:'hero'},
+      h('div', {class:'flake','aria-hidden':'true'}, '❄ ❄ ❄'),
+      h('h1', 'Secret Santa'),
+      opts.sub ? h('p', {class:'sub'}, opts.sub) : null),
+    ...cards,
+    h('footer', {class:'foot'}, 'Runs entirely in your browser. No accounts, no server, nothing uploaded.')));
+  if (opts.top) window.scrollTo(0, 0);
+}
+const stepHead = (n, text) => h('h2', h('span', {class:'step'}, String(n)), text);
+
+async function copyText(text, btn){
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+  if (!ok) {
+    const ta = h('textarea', {style:'position:fixed;opacity:0;top:0'}, text);
+    document.body.append(ta); ta.select();
+    try { ok = document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  const old = btn.textContent;
+  btn.textContent = ok ? 'Copied ✓' : 'Select the text and copy it';
+  setTimeout(() => { btn.textContent = old; }, 2000);
+}
+
+/* ---------- crypto ---------- */
+const keyCache = new Map();
+const aesKey = k => {
+  if (!keyCache.has(k)) keyCache.set(k, crypto.subtle.importKey('raw', b64u.dec(k), 'AES-GCM', false, ['encrypt','decrypt']));
+  return keyCache.get(k);
+};
+// plaintext = [giver, receiver, 4-byte game id]; output = iv(12) + ciphertext(6) + tag(16) = 34 bytes
+async function seal(g, giver, receiver){
+  const iv = rand(12);
+  const pt = new Uint8Array([giver, receiver, ...b64u.dec(g.id)]);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, await aesKey(g.k), pt));
+  const out = new Uint8Array(iv.length + ct.length); out.set(iv); out.set(ct, iv.length);
+  return b64u.enc(out);
+}
+async function unseal(g, code){
+  try {
+    const bytes = b64u.dec(code);
+    if (bytes.length !== 34) return null;
+    const pt = new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM', iv: bytes.slice(0,12)}, await aesKey(g.k), bytes.slice(12)));
+    if (b64u.enc(pt.slice(2)) !== g.id) return null;
+    const giver = pt[0], receiver = pt[1], n = g.n.length;
+    if (giver >= n || receiver >= n || giver === receiver || giver === g.o) return null;
+    return {giver, receiver};
+  } catch { return null; }
+}
+
+/* ---------- game data ---------- */
+function validGame(g){
+  try {
+    return !!g && g.v === 1 && typeof g.t === 'string'
+      && b64u.dec(g.id).length === 4 && b64u.dec(g.k).length === 16
+      && Array.isArray(g.n) && g.n.length >= 3 && g.n.length <= 100
+      && g.n.every(x => typeof x === 'string' && x.length > 0 && x.length <= 60)
+      && Number.isInteger(g.o) && g.o >= 0 && g.o < g.n.length;
+  } catch { return false; }
+}
+let game = null, mem = null;
+function load(){
+  try { const raw = localStorage.getItem(STORE); if (raw) { const g = JSON.parse(raw); if (validGame(g)) { g.codes = g.codes || {}; return g; } } }
+  catch { return mem; }
+  return mem;
+}
+function save(){ mem = game; try { localStorage.setItem(STORE, JSON.stringify(game)); } catch {} }
+function wipe(){ mem = null; game = null; try { localStorage.removeItem(STORE); } catch {} }
+const joinLink = g => baseUrl() + '#j=' + b64u.enc(enc.encode(JSON.stringify({v:1, id:g.id, t:g.t, n:g.n, o:g.o, k:g.k})));
+function parseJoin(payload){
+  try { const g = JSON.parse(dec.decode(b64u.dec(payload))); return validGame(g) ? g : null; } catch { return null; }
+}
+
+/* ---------- router ---------- */
+function route(){
+  if (!window.crypto || !crypto.subtle) {
+    return page({}, h('section', {class:'card'}, h('h2', 'Needs a secure page'),
+      h('p', 'Your browser only allows encryption on https:// pages (or localhost). Open this app from its https link instead.')));
+  }
+  const hash = location.hash;
+  const p = hash.startsWith('#j=') ? viewParticipant(hash.slice(3))
+    : hash.startsWith('#r=') ? importReturn(hash.slice(3))
+    : (game = load(), game ? viewDashboard() : viewSetup());
+  Promise.resolve(p).catch(err => { console.error(err); page({}, h('section', {class:'card'}, h('h2', 'Something went wrong'), h('p', String(err && err.message || err)))); });
+}
+window.addEventListener('hashchange', route);
+window.addEventListener('storage', e => { if (e.key === STORE && !location.hash) route(); });
+
+/* ============================================================
+   ORGANISER: set up
+   ============================================================ */
+function parseNames(text){
+  const seen = new Set(), names = [], dupes = [];
+  for (let line of text.split(/\r?\n|,/)) {
+    line = line.trim().replace(/\s+/g, ' ').slice(0, 40);
+    if (!line) continue;
+    const key = line.toLowerCase();
+    if (seen.has(key)) { dupes.push(line); continue; }
+    seen.add(key); names.push(line);
+  }
+  return {names, dupes};
+}
+
+function viewSetup(){
+  const title = h('input', {type:'text', id:'title', maxlength:'40', autocomplete:'off', value:`Secret Santa ${new Date().getFullYear()}`});
+  const names = h('textarea', {id:'names', rows:'7', placeholder:'One name per line, including yours', autocapitalize:'words'});
+  const me = h('select', {id:'me'});
+  const info = h('p', {class:'msg', role:'status'});
+  const go = h('button', {class:'btn big', type:'button'}, 'Create the game');
+  const notice = location.protocol === 'file:'
+    ? h('p', {class:'notice'}, 'You\'re opening this from a file on your computer. That\'s fine for trying it out, but links only work for other people once the page is hosted online (e.g. GitHub Pages).') : null;
+
+  const refresh = () => {
+    const {names:list, dupes} = parseNames(names.value);
+    const prev = me.selectedOptions[0] && me.selectedOptions[0].textContent;
+    me.replaceChildren(h('option', {value:''}, 'Choose your name…'), ...list.map((nm,i) => h('option', {value:String(i)}, nm)));
+    const keep = list.indexOf(prev); if (keep >= 0) me.value = String(keep);
+    go.disabled = list.length < 3;
+    info.className = 'msg' + (list.length < 3 ? ' warn' : '');
+    info.textContent = list.length < 3 ? `Add at least 3 people (you plus two more). So far: ${list.length}.`
+      : `${list.length} people${dupes.length ? ` · ignored duplicate: ${dupes.join(', ')}` : ''}`;
+  };
+  names.addEventListener('input', refresh);
+  go.addEventListener('click', () => {
+    const {names:list} = parseNames(names.value);
+    if (list.length < 3) return;
+    if (me.value === '') { info.className = 'msg warn'; info.textContent = 'Pick which name is you.'; me.focus(); return; }
+    game = {v:1, id:b64u.enc(rand(4)), k:b64u.enc(rand(16)), t:title.value.trim() || 'Secret Santa', n:list, o:+me.value, codes:{}};
+    save(); lastMsg = null; shown = false; route();
+  });
+  refresh();
+
+  page({sub:'Work out who you\'ve got – without anyone else finding out who they have.'},
+    h('section', {class:'card'},
+      stepHead(1, 'Set up the group'),
+      notice,
+      h('p', {class:'hint tight'}, 'You\'ll get a link to send everyone. They each choose who they\'re buying for and send you back a scrambled link. When all of those are in, the app shows you who\'s left: yours.'),
+      h('label', {for:'title'}, 'Group name'), title,
+      h('label', {for:'names'}, 'Everyone taking part (including you)'), names,
+      h('label', {for:'me'}, 'Which one is you?'), me,
+      info,
+      h('div', {class:'row'}, go)));
+}
+
+/* ============================================================
+   ORGANISER: dashboard
+   ============================================================ */
+let lastMsg = null, shown = false;
+
+async function analyse(g){
+  const picks = new Map();
+  for (const [gv, code] of Object.entries(g.codes)) {
+    const r = await unseal(g, code);
+    if (r && r.giver === +gv) picks.set(r.giver, r.receiver);
+  }
+  const n = g.n.length;
+  const waiting = range(n).filter(i => i !== g.o && !picks.has(i));
+  const byReceiver = new Map();
+  picks.forEach((r, gv) => { if (!byReceiver.has(r)) byReceiver.set(r, []); byReceiver.get(r).push(gv); });
+  const clashes = [...byReceiver.values()].filter(a => a.length > 1);
+  let result = null, problem = null;
+  if (!waiting.length) {
+    if (clashes.length) problem = 'clash';
+    else {
+      const taken = new Set(picks.values());
+      const free = range(n).filter(i => !taken.has(i));
+      if (free.length === 1 && free[0] !== g.o) result = free[0]; else problem = 'nofit';
+    }
+  }
+  return {picks, waiting, clashes, result, problem};
+}
+
+async function addCodes(g, text){
+  const added = []; let bad = 0;
+  for (const raw of text.split(/\s+/).filter(Boolean)) {
+    const m = raw.match(/#r=(\S+)/);
+    const code = (m ? m[1] : raw).replace(/^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$/g, '');
+    const r = code && await unseal(g, code);
+    if (r) { g.codes[r.giver] = code; added.push(g.n[r.giver]); } else bad++;
+  }
+  if (added.length) save();
+  return {added, bad};
+}
+
+async function viewDashboard(){
+  const g = game, a = await analyse(g);
+  if (game !== g) return;
+  const n = g.n.length;
+  const others = range(n).filter(i => i !== g.o);
+  const link = joinLink(g);
+
+  /* 1 – share */
+  const linkBox = h('input', {type:'text', readonly:true, class:'linkbox', value:link, 'aria-label':'Link to send to everyone'});
+  linkBox.addEventListener('focus', () => linkBox.select());
+  const copyBtn = h('button', {class:'btn', type:'button'}, 'Copy link');
+  copyBtn.addEventListener('click', () => copyText(link, copyBtn));
+  const shareBtn = navigator.share ? h('button', {class:'btn ghost', type:'button',
+    onclick: () => navigator.share({title:g.t, text:`Join our ${g.t}!`, url:link}).catch(() => {})}, 'Share…') : null;
+  const notice = location.protocol === 'file:'
+    ? h('p', {class:'notice'}, 'This page is open from a file on your computer, so this link won\'t work for anyone else yet. Host the page online first (GitHub Pages), then open it from there and create the game again.') : null;
+
+  /* 2 – collect */
+  const paste = h('textarea', {rows:'4', 'aria-label':'Pasted links or codes', placeholder:'Paste the links people send you here (one or many)'});
+  const addBtn = h('button', {class:'btn', type:'button'}, 'Add');
+  addBtn.addEventListener('click', async () => {
+    addBtn.disabled = true;
+    const {added, bad} = await addCodes(g, paste.value);
+    const parts = [];
+    if (added.length) parts.push(`Added ${added.join(', ')}.`);
+    if (bad) parts.push(`${bad} item${bad > 1 ? 's' : ''} couldn't be read – check ${bad > 1 ? 'they\'re' : 'it\'s'} the full link from this game.`);
+    if (!parts.length) parts.push('Nothing to add yet.');
+    lastMsg = {text: parts.join(' '), warn: !!bad};
+    if (added.length) shown = false;   // new data: hide the answer again
+    viewDashboard();
+  });
+  const got = others.length - a.waiting.length;
+
+  /* 3 – reveal */
+  let body;
+  const nameList = idx => idx.map(i => g.n[i]).join(', ');
+  if (a.waiting.length) {
+    body = h('div', {class:'lock'}, h('p', `Locked until everyone else has sent theirs. Still waiting on: ${nameList(a.waiting)}.`));
+  } else if (a.problem === 'clash') {
+    body = h('div', {class:'problem'},
+      ...a.clashes.map(c => h('p', `${c.map(i => g.n[i]).join(' and ')} picked the same person, so someone chose wrong.`)),
+      h('p', 'Ask them to double-check and send a new link – the newest one replaces the old one.'));
+  } else if (a.problem === 'nofit') {
+    body = h('div', {class:'problem'},
+      h('p', 'The picks don\'t add up: nobody chose you, which can\'t happen in a real draw.'),
+      h('p', 'Someone probably picked the wrong person. Ask everyone to double-check and resend.'));
+  } else if (!shown) {
+    const b = h('button', {class:'btn big', type:'button'}, 'Show me who I\'ve got');
+    b.addEventListener('click', () => { shown = true; viewDashboard(); });
+    body = h('div', h('p', {class:'hint tight'}, 'All picks are in. Make sure nobody\'s looking over your shoulder.'), b);
+  } else {
+    const b = h('button', {class:'btn ghost', type:'button', style:'margin-top:12px'}, 'Hide again');
+    b.addEventListener('click', () => { shown = false; viewDashboard(); });
+    body = h('div', h('div', {class:'reveal', role:'status'}, h('p', {class:'lead'}, 'You\'re buying a gift for'), h('p', {class:'name'}, g.n[a.result])), b);
+  }
+
+  /* footer actions */
+  const reset = h('button', {class:'btn ghost danger', type:'button'}, 'Start over');
+  let armed = null;
+  reset.addEventListener('click', () => {
+    if (armed) { clearTimeout(armed); wipe(); lastMsg = null; shown = false; route(); return; }
+    reset.textContent = 'Tap again to delete this game';
+    armed = setTimeout(() => { armed = null; reset.textContent = 'Start over'; }, 4000);
+  });
+
+  page({sub: g.t},
+    h('section', {class:'card'},
+      stepHead(1, 'Send this link to everyone'),
+      h('p', {class:'hint'}, `Send it to everyone except yourself (${g.n[g.o]}). They choose who they're buying for and get a scrambled link to send back to you.`),
+      notice, linkBox, h('div', {class:'row'}, copyBtn, shareBtn)),
+    h('section', {class:'card'},
+      stepHead(2, 'Collect their replies'),
+      h('p', {class:'hint tight'}, `${got} of ${others.length} received`),
+      h('ul', {class:'pills'}, others.map(i => { const ok = a.picks.has(i);
+        return h('li', {class:'pill ' + (ok ? 'done' : 'wait')}, h('span', {'aria-hidden':'true'}, ok ? '✓ ' : '… '), g.n[i], h('span', {class:'sr'}, ok ? ' – received' : ' – waiting')); })),
+      h('label', {for:'x'}, 'Paste links or codes'),
+      Object.assign(paste, {id:'x'}),
+      h('div', {class:'row'}, addBtn),
+      h('p', {class:'msg' + (lastMsg && lastMsg.warn ? ' warn' : ''), role:'status'}, lastMsg ? lastMsg.text : ''),
+      h('p', {class:'hint tight'}, 'Tip: tapping a reply link on this same device adds it automatically, but pasting always works.')),
+    h('section', {class:'card'}, stepHead(3, 'Who have I got?'), body),
+    h('section', {class:'card'},
+      h('details',
+        h('summary', 'How private is this?'),
+        h('p', 'Each person\'s choice is encrypted with a key that only lives in the link you sent them, so nobody reading the group chat can decode a reply. This page never shows anyone else\'s pick – only the single person nobody else chose.'),
+        h('p', 'Honest caveat: you hold the key too, so someone technical with developer tools on your device could decode individual replies. The app simply never does it on screen.')),
+      h('details',
+        h('summary', 'Where is my data?'),
+        h('p', 'Only in this browser on this device (localStorage). Don\'t clear site data or switch browsers before you\'ve noted down who you\'ve got. Write it down once you know it!')),
+      h('div', {class:'row'}, reset)));
+}
+
+/* reply link opened on the organiser's device: #r=CODE */
+async function importReturn(code){
+  game = load();
+  history.replaceState(null, '', baseUrl());
+  if (!game) {
+    return page({}, h('section', {class:'card'}, h('h2', 'No game found here'),
+      h('p', 'Open this reply link on the same phone or computer (and browser) where you set up the game, or copy the code and paste it into the app there.')));
+  }
+  const r = await unseal(game, code);
+  if (!r) {
+    lastMsg = {text:'That link isn\'t from this game, or it got cut off. Ask them to send it again.', warn:true};
+  } else {
+    game.codes[r.giver] = code; save(); shown = false;
+    lastMsg = {text:`Added ${game.n[r.giver]}.`, warn:false};
+  }
+  route();
+}
+
+/* ============================================================
+   PARTICIPANT: #j=…
+   ============================================================ */
+function viewParticipant(payload){
+  const g = parseJoin(payload);
+  if (!g) return page({}, h('section', {class:'card'}, h('h2', 'That link looks damaged'),
+    h('p', 'It may have been cut off when it was copied. Ask for the link to be sent again.')));
+  const org = g.n[g.o];
+  const st = {me:null, target:null, link:null};
+
+  const picker = (indices, selected, onPick, label) =>
+    h('div', {class:'chips', role:'group', 'aria-label':label}, indices.map(i =>
+      h('button', {type:'button', class:'chip', 'aria-pressed':String(selected === i), onclick:() => onPick(i)}, g.n[i])));
+
+  const render = (top) => {
+    const cards = [];
+    if (st.link) {
+      const box = h('textarea', {readonly:true, rows:'3', class:'linkbox', 'aria-label':'Your scrambled link'}, st.link);
+      box.addEventListener('focus', () => box.select());
+      const copyBtn = h('button', {class:'btn', type:'button'}, 'Copy link');
+      copyBtn.addEventListener('click', () => copyText(st.link, copyBtn));
+      const shareBtn = navigator.share ? h('button', {class:'btn ghost', type:'button',
+        onclick:() => navigator.share({title:'My Secret Santa reply', text:st.link}).catch(() => {})}, 'Share…') : null;
+      cards.push(h('section', {class:'card'},
+        h('h2', 'Your link is ready'),
+        h('p', {class:'hint'}, `Send this to ${org} (privately is best). It\'s scrambled, so nobody who sees it can tell who you picked.`),
+        box, h('div', {class:'row'}, copyBtn, shareBtn),
+        h('div', {class:'row'}, h('button', {class:'btn ghost', type:'button', onclick:() => { st.link = null; st.target = null; render(true); }}, 'I picked wrong – start again'))));
+    } else {
+      const me = st.me, giversList = range(g.n.length).filter(i => i !== g.o);
+      cards.push(h('section', {class:'card'}, stepHead(1, 'Who are you?'),
+        picker(giversList, me, i => { st.me = i; if (st.target === i) st.target = null; render(); }, 'Who are you')));
+      if (me !== null) cards.push(h('section', {class:'card'}, stepHead(2, 'Who did you get?'),
+        h('p', {class:'hint tight'}, 'The person you\'re buying a gift for.'),
+        picker(range(g.n.length).filter(i => i !== me), st.target, i => { st.target = i; render(); }, 'Who you are buying for')));
+      if (me !== null && st.target !== null) {
+        const go = h('button', {class:'btn big', type:'button'}, 'Make my scrambled link');
+        go.addEventListener('click', async () => {
+          go.disabled = true;
+          st.link = baseUrl() + '#r=' + await seal(g, st.me, st.target);
+          render(true);
+        });
+        cards.push(h('section', {class:'card'}, stepHead(3, 'Check and send'),
+          h('p', `You are ${g.n[me]} and you're buying for ${g.n[st.target]}.`),
+          h('p', {class:'hint'}, 'Double-check – a wrong pick means the final answer will be wrong too.'),
+          go));
+      }
+    }
+    cards.push(h('p', {class:'foot'}, 'Organiser? ', h('a', {href:baseUrl(), onclick:e => { e.preventDefault(); history.pushState(null, '', baseUrl()); route(); }}, 'Open your dashboard')));
+    page({sub:`${g.t} · pick yours and send ${org} the link`, top}, ...cards);
+  };
+  render(false);
+}
+
+route();
+})();
+</script>
+</body>
+</html>
